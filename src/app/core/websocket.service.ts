@@ -41,13 +41,36 @@ export class WebSocketService {
     this.openSocket();
   }
 
+  /**
+   * Build an absolute WebSocket URL.
+   *
+   * `environment.wsUrl` may be absolute (ws:// or wss://) or a relative
+   * path such as `/ws`. In production the relative form is resolved against
+   * the current origin so the correct protocol (wss on HTTPS) is used.
+   */
+  private buildSocketUrl(token: string): string {
+    const configured = environment.wsUrl;
+    let base: string;
+
+    if (configured.startsWith('ws://') || configured.startsWith('wss://')) {
+      base = configured;
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const path = configured.startsWith('/') ? configured : `/${configured}`;
+      base = `${protocol}//${window.location.host}${path}`;
+    }
+
+    const separator = base.includes('?') ? '&' : '?';
+    return `${base}${separator}token=${encodeURIComponent(token)}`;
+  }
+
   private openSocket(): void {
     const token = this.auth.accessToken;
     if (!token) return;
 
     // Run outside Angular zone to avoid unnecessary change detection
     this.zone.runOutsideAngular(() => {
-      const url = `${environment.wsUrl}?token=${token}`;
+      const url = this.buildSocketUrl(token);
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {

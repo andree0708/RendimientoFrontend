@@ -38,14 +38,11 @@ interface NotifItem { id: string; title: string; message: string; }
 
           <!-- Logo -->
           <div style="padding: 0 20px 24px; display: flex; align-items: center; gap: 12px;">
-            <div style="width: 40px; height: 40px; border-radius: 12px;
-              background: linear-gradient(135deg, #ec4899, #f9a8d4);
-              display: flex; align-items: center; justify-content: center;">
-              <mat-icon style="color: white;">spa</mat-icon>
-            </div>
+            <img src="logo.svg" alt="WorkSense AI logo"
+              style="width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);" />
             <div>
-              <div style="font-weight: 600; font-size: 1.05rem; color: var(--ws-text);">WorkSense</div>
-              <div style="font-size: 0.75rem; color: var(--ws-text-muted);">Wellbeing Intelligence</div>
+              <div style="font-weight: 700; font-size: 1.05rem; color: var(--ws-text);">WorkSense</div>
+              <div style="font-size: 0.75rem; color: var(--ws-text-muted);">Inteligencia y bienestar</div>
             </div>
           </div>
 
@@ -77,7 +74,7 @@ interface NotifItem { id: string; title: string; message: string; }
               [style.background]="ws.connected() ? '#22c55e' : '#d4b8b8'">
             </span>
             <span style="color: var(--ws-text-muted);">
-              {{ ws.connected() ? 'Live' : 'Connecting…' }}
+              {{ ws.connected() ? 'En vivo' : 'Conectando…' }}
             </span>
           </div>
         </div>
@@ -115,7 +112,7 @@ interface NotifItem { id: string; title: string; message: string; }
             }
             @if (recentNotifications().length === 0) {
               <div style="padding: 16px; color: var(--ws-text-muted); font-size: 0.85rem;">
-                No notifications yet
+                Sin notificaciones todavía
               </div>
             }
           </mat-menu>
@@ -135,15 +132,15 @@ interface NotifItem { id: string; title: string; message: string; }
               <div style="font-size: 0.78rem; color: var(--ws-text-muted);">{{ auth.currentUser()?.email }}</div>
             </div>
             <button mat-menu-item routerLink="/settings">
-              <mat-icon>settings</mat-icon> Settings
+              <mat-icon>settings</mat-icon> Ajustes
             </button>
             @if (auth.isAdmin()) {
               <button mat-menu-item routerLink="/admin">
-                <mat-icon>admin_panel_settings</mat-icon> Admin
+                <mat-icon>admin_panel_settings</mat-icon> Administración
               </button>
             }
             <button mat-menu-item (click)="logout()">
-              <mat-icon>logout</mat-icon> Sign out
+              <mat-icon>logout</mat-icon> Cerrar sesión
             </button>
           </mat-menu>
         </mat-toolbar>
@@ -169,13 +166,13 @@ export class MainLayout implements OnInit, OnDestroy {
   recentNotifications = signal<NotifItem[]>([]);
 
   navItems: NavItem[] = [
-    { link: '/dashboard',       label: 'Dashboard',        icon: 'dashboard' },
-    { link: '/tasks',           label: 'Tasks',             icon: 'check_circle_outline' },
-    { link: '/self-reports',    label: 'Self-Reports',      icon: 'favorite_border' },
-    { link: '/analysis',        label: 'AI Analysis',       icon: 'psychology' },
-    { link: '/recommendations', label: 'Recommendations',   icon: 'lightbulb_outline' },
-    { link: '/sessions',        label: 'Sessions',          icon: 'history' },
-    { link: '/settings',        label: 'Settings',          icon: 'settings' },
+    { link: '/dashboard',       label: 'Panel principal', icon: 'dashboard' },
+    { link: '/tasks',           label: 'Tareas',          icon: 'check_circle_outline' },
+    { link: '/self-reports',    label: 'Autorreportes',   icon: 'favorite_border' },
+    { link: '/analysis',        label: 'Análisis IA',     icon: 'psychology' },
+    { link: '/recommendations', label: 'Recomendaciones', icon: 'lightbulb_outline' },
+    { link: '/sessions',        label: 'Sesiones',        icon: 'history' },
+    { link: '/settings',        label: 'Ajustes',         icon: 'settings' },
   ];
 
   ngOnInit() {
@@ -192,7 +189,7 @@ export class MainLayout implements OnInit, OnDestroy {
     this.ws.on('notification.created', (event: WSEvent) => {
       const p = event.payload as any;
       this.recentNotifications.update((list) => [
-        { id: event.event_id, title: p['title'] ?? 'New notification', message: p['message'] ?? '' },
+        { id: event.event_id, title: p['title'] ?? 'Nueva notificación', message: p['message'] ?? '' },
         ...list,
       ].slice(0, 10));
       this.notif.unreadCount.update((c) => c + 1);

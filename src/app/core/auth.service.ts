@@ -78,6 +78,10 @@ export class AuthService {
   
   }
 
+  updateProfile(data: { full_name?: string; avatar_url?: string | null; preferred_scale_max?: number }) {
+    return this.http.patch<User>(`${environment.apiUrl}/users/me`, data);
+  }
+
   setCurrentUser(user: User): void {
     this._currentUser.set(user);
     localStorage.setItem('ws_user', JSON.stringify(user));
@@ -89,7 +93,7 @@ export class AuthService {
       this.logout();
       throw new Error('No refresh token');
     }
-    return this.http.post<{ access_token: string }>(`${environment.apiUrl}/auth/refresh`, {
+    return this.http.post<TokenResponse>(`${environment.apiUrl}/auth/refresh`, {
       refresh_token: refresh,
     });
   }

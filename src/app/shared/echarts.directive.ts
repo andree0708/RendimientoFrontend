@@ -7,7 +7,27 @@ import {
   NgZone,
   inject,
 } from '@angular/core';
-import * as echarts from 'echarts';
+import * as echarts from 'echarts/core';
+import { BarChart, LineChart } from 'echarts/charts';
+import {
+  GraphicComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+// Only the chart types and components this app actually uses are bundled.
+// Importing the whole `echarts` package added ~1 MB to the initial bundle.
+echarts.use([
+  BarChart,
+  LineChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  GraphicComponent,
+  CanvasRenderer,
+]);
 
 @Directive({ selector: '[appEcharts]' })
 export class EchartsDirective implements OnChanges, OnDestroy {

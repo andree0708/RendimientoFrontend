@@ -15,19 +15,19 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
   imports: [CommonModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule, EchartsDirective],
   template: `
     <div class="ws-fade-in">
-      <h1 class="ws-page-title">AI Analysis</h1>
-      <p class="ws-page-subtitle">Real predictions and assessments powered by your work patterns.</p>
+      <h1 class="ws-page-title">Análisis IA</h1>
+      <p class="ws-page-subtitle">Predicciones y evaluaciones reales basadas en tus patrones de trabajo.</p>
 
       <!-- Action buttons -->
       <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
         <button mat-flat-button color="primary" (click)="runFatigue()" [disabled]="loading()" style="border-radius: 12px;">
-          <mat-icon>psychology</mat-icon> Assess fatigue
+          <mat-icon>psychology</mat-icon> Evaluar fatiga
         </button>
         <button mat-flat-button (click)="runPerformance()" [disabled]="loading()" style="border-radius: 12px;">
-          <mat-icon>trending_up</mat-icon> Predict performance
+          <mat-icon>trending_up</mat-icon> Predecir rendimiento
         </button>
         <button mat-stroked-button (click)="runAnomalies()" [disabled]="loading()" style="border-radius: 12px;">
-          <mat-icon>detector</mat-icon> Detect anomalies
+          <mat-icon>detector</mat-icon> Detectar anomalías
         </button>
       </div>
 
@@ -40,23 +40,23 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
         <div class="ws-card">
           <div style="font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
             <mat-icon style="color: #f59e0b;">battery_alert</mat-icon>
-            Fatigue assessment
+            Evaluación de fatiga
           </div>
           @if (latestFatigue()) {
             <div style="text-align: center; padding: 20px 0;">
               <div class="ws-stat-value" [style.color]="riskColor(latestFatigue()!.risk_category)">
-                {{ latestFatigue()!.risk_category | titlecase }}
+                {{ riskEs(latestFatigue()!.risk_category) }}
               </div>
               <div style="color: var(--ws-text-muted); margin-top: 8px;">
-                {{ (latestFatigue()!.risk_probability * 100 | number:'1.0-0') }}% probability
+                {{ (latestFatigue()!.risk_probability * 100 | number:'1.0-0') }}% de probabilidad
               </div>
               <div style="margin-top: 12px;">
-                Confidence: {{ (latestFatigue()?.confidence ?? 0) * 100 | number:'1.0-0' }}%
+                Confianza: {{ (latestFatigue()?.confidence ?? 0) * 100 | number:'1.0-0' }}%
               </div>
             </div>
             @if (topFatigueFeatures().length > 0) {
               <div style="margin-top: 16px;">
-                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Key factors</div>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Factores clave</div>
                 @for (f of topFatigueFeatures(); track f.name) {
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <div style="flex: 1; font-size: 0.82rem; color: var(--ws-text-muted);">{{ f.name }}</div>
@@ -72,7 +72,7 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
             </div>
           } @else {
             <div style="text-align: center; padding: 30px; color: var(--ws-text-muted);">
-              Run an assessment to see your fatigue estimation.
+              Ejecuta una evaluación para ver tu estimación de fatiga.
             </div>
           }
         </div>
@@ -81,23 +81,23 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
         <div class="ws-card">
           <div style="font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
             <mat-icon style="color: var(--ws-accent);">trending_up</mat-icon>
-            Performance forecast
+            Pronóstico de rendimiento
           </div>
           @if (latestPrediction()) {
             <div style="text-align: center; padding: 20px 0;">
               <div class="ws-stat-value" [style.color]="riskColor(latestPrediction()!.risk_label)">
-                {{ latestPrediction()!.risk_label | titlecase }}
+                {{ riskEs(latestPrediction()!.risk_label) }}
               </div>
               <div style="color: var(--ws-text-muted); margin-top: 8px;">
-                Next {{ latestPrediction()!.horizon_minutes }} minutes
+                Próximos {{ latestPrediction()!.horizon_minutes }} minutos
               </div>
               <div style="margin-top: 12px;">
-                Variation: {{ latestPrediction()!.predicted_variation | number:'1.2-2' }}
+                Variación: {{ latestPrediction()!.predicted_variation | number:'1.2-2' }}
               </div>
             </div>
             @if (topPerfFeatures().length > 0) {
               <div style="margin-top: 16px;">
-                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Key factors</div>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Factores clave</div>
                 @for (f of topPerfFeatures(); track f.name) {
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <div style="flex: 1; font-size: 0.82rem; color: var(--ws-text-muted);">{{ f.name }}</div>
@@ -110,7 +110,7 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
             }
           } @else {
             <div style="text-align: center; padding: 30px; color: var(--ws-text-muted);">
-              Run a prediction to forecast your performance.
+              Ejecuta una predicción para pronosticar tu rendimiento.
             </div>
           }
         </div>
@@ -121,26 +121,33 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
         <div class="ws-card" style="margin-top: 16px;">
           <div style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
             <mat-icon style="color: #8b5cf6;">radar</mat-icon>
-            Anomaly detection
+            Detección de anomalías
           </div>
           <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-            <div>Anomalies found: <strong>{{ anomalyResult()?.anomaly_count }}</strong></div>
-            <div>Pattern: <strong>{{ anomalyResult()?.is_anomalous ? 'Unusual activity detected' : 'Within normal range' }}</strong></div>
-            <div>Score: <strong>{{ anomalyResult()?.anomaly_score | number:'1.2-2' }}</strong></div>
+            <div>Anomalías encontradas: <strong>{{ anomalyResult()?.anomaly_count }}</strong></div>
+            <div>Patrón: <strong>{{ anomalyResult()?.is_anomalous ? 'Actividad inusual detectada' : 'Dentro del rango normal' }}</strong></div>
+            <div>Puntuación: <strong>{{ anomalyResult()?.anomaly_score | number:'1.2-2' }}</strong></div>
           </div>
         </div>
       }
 
       <!-- Fatigue history chart -->
       <div class="ws-card" style="margin-top: 16px;">
-        <div style="font-weight: 600; margin-bottom: 16px;">Fatigue risk history</div>
-        <div class="ws-chart" [appEcharts]="historyChart()"></div>
+        <div style="font-weight: 600; margin-bottom: 16px;">Historial de riesgo de fatiga</div>
+        @if (fatigueHistory().length > 0) {
+          <div class="ws-chart" [appEcharts]="historyChart()"></div>
+        } @else {
+          <div style="text-align: center; padding: 30px; color: var(--ws-text-muted);">
+            Aún no hay evaluaciones registradas.
+          </div>
+        }
       </div>
 
       @if (unreliable()) {
         <div style="margin-top: 16px; padding: 12px 16px; background: #fef3c7; border-radius: 10px; font-size: 0.85rem; color: #92400e;">
           <mat-icon style="vertical-align: middle; margin-right: 4px;">info</mat-icon>
-          Predictions may not be reliable yet — the system needs more data to learn your patterns. Keep using the agent and submitting self-reports.
+          Ningún modelo activo ha superado el control de calidad para esta predicción, por lo que el resultado se marca
+          <strong>desconocido</strong>. No se basa en un modelo validado.
         </div>
       }
     </div>
@@ -183,31 +190,50 @@ export class AnalysisComponent implements OnInit {
 
   runFatigue() {
     this.loading.set(true);
-    this.aiSvc.assessFatigue().subscribe((result) => {
-      this.latestFatigue.set(result);
-      this.parseFatigueFeatures();
-      this.unreliable.set(result.risk_category === 'unknown');
-      this.loading.set(false);
-      this.loadHistory();
-      this.snackBar.open('Fatigue assessment complete', 'Close', { duration: 2500 });
+    this.aiSvc.assessFatigue().subscribe({
+      next: (result) => {
+        this.latestFatigue.set(result);
+        this.parseFatigueFeatures();
+        this.unreliable.set(result.risk_category === 'unknown');
+        this.loading.set(false);
+        this.loadHistory();
+        this.snackBar.open('Evaluación de fatiga completada', 'Cerrar', { duration: 2500 });
+      },
+      error: () => {
+        this.loading.set(false);
+        this.snackBar.open('No hay ningún modelo activo disponible para esta evaluación', 'Cerrar', { duration: 3500 });
+      },
     });
   }
 
   runPerformance() {
     this.loading.set(true);
-    this.aiSvc.predictPerformance().subscribe((result) => {
-      this.latestPrediction.set(result);
-      this.parsePerfFeatures();
-      this.loading.set(false);
-      this.snackBar.open('Performance forecast ready', 'Close', { duration: 2500 });
+    this.aiSvc.predictPerformance().subscribe({
+      next: (result) => {
+        this.latestPrediction.set(result);
+        this.parsePerfFeatures();
+        this.unreliable.set(result.risk_label === 'unknown');
+        this.loading.set(false);
+        this.snackBar.open('Pronóstico de rendimiento listo', 'Cerrar', { duration: 2500 });
+      },
+      error: () => {
+        this.loading.set(false);
+        this.snackBar.open('No hay ningún modelo activo disponible para este pronóstico', 'Cerrar', { duration: 3500 });
+      },
     });
   }
 
   runAnomalies() {
     this.loading.set(true);
-    this.aiSvc.detectAnomalies().subscribe((result) => {
-      this.anomalyResult.set(result);
-      this.loading.set(false);
+    this.aiSvc.detectAnomalies().subscribe({
+      next: (result) => {
+        this.anomalyResult.set(result);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.snackBar.open('La detección de anomalías no está disponible', 'Cerrar', { duration: 3000 });
+      },
     });
   }
 
@@ -235,6 +261,18 @@ export class AnalysisComponent implements OnInit {
         })));
       } catch {}
     }
+  }
+
+  /** Los valores del backend se quedan en inglés; se muestran traducidos. */
+  riskEs(risk: string): string {
+    const r = risk.toLowerCase().replace(/_/g, ' ');
+    const map: Record<string, string> = {
+      low: 'Bajo',
+      moderate: 'Moderado',
+      high: 'Alto',
+      unknown: 'Desconocido',
+    };
+    return map[r] ?? risk;
   }
 
   riskColor(risk: string): string {

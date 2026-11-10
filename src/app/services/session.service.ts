@@ -15,7 +15,7 @@ export class SessionService {
   }
 
   getActiveSession() {
-    return this.api.get<WorkSession>('/sessions/active/current');
+    return this.api.get<WorkSession | null>('/sessions/active/current');
   }
 
   listSessions(page = 1, pageSize = 20) {

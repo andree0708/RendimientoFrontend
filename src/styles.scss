@@ -77,21 +77,26 @@ $worksense-theme: mat.m2-define-light-theme((
 
 // ---- CSS variables for custom components ----
 :root {
-  --ws-bg: #faf6f0;
+  --ws-bg: #f7f4ef;
   --ws-surface: #ffffff;
   --ws-surface-2: #fdf8f3;
-  --ws-text: #2d2d3a;
+  --ws-text: #23232e;
   --ws-text-muted: #71717a;
-  --ws-border: #f0e6e0;
+  --ws-border: #efe3e3;
   --ws-primary: #ec4899;
+  --ws-primary-deep: #be185d;
   --ws-primary-light: #fdf2f8;
   --ws-accent: #14b8a6;
   --ws-accent-light: #f0fdfa;
-  --ws-radius: 16px;
-  --ws-radius-sm: 10px;
-  --ws-shadow: 0 2px 12px rgba(236, 72, 153, 0.06);
-  --ws-shadow-lg: 0 8px 30px rgba(236, 72, 153, 0.1);
-  --ws-gradient: linear-gradient(135deg, #fdf2f8 0%, #f0fdfa 100%);
+  --ws-violet: #8b5cf6;
+  --ws-amber: #f59e0b;
+  --ws-radius: 18px;
+  --ws-radius-sm: 12px;
+  --ws-shadow: 0 2px 14px rgba(139, 92, 246, 0.07);
+  --ws-shadow-lg: 0 12px 36px rgba(139, 92, 246, 0.14);
+  --ws-gradient: linear-gradient(135deg, #fdf2f8 0%, #f5f0ff 50%, #f0fdfa 100%);
+  --ws-brand-gradient: linear-gradient(135deg, #ec4899 0%, #8b5cf6 55%, #14b8a6 100%);
+  --ws-hero-gradient: linear-gradient(150deg, #4c1d95 0%, #8b5cf6 38%, #ec4899 72%, #f59e0b 100%);
 }
 
 // ---- Base ----
@@ -127,10 +132,20 @@ body {
 }
 
 .ws-page-title {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: var(--ws-text);
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: linear-gradient(120deg, var(--ws-text) 30%, var(--ws-primary-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
   margin-bottom: 4px;
+}
+
+.ws-page-title--plain {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  color: var(--ws-text);
 }
 
 .ws-page-subtitle {
@@ -173,6 +188,59 @@ body {
 }
 
 .ws-fade-in { animation: wsFadeIn 0.3s ease forwards; }
+
+// KPI card with gradient icon tile
+.ws-kpi {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--ws-kpi-glow, rgba(139, 92, 246, 0.1));
+    pointer-events: none;
+  }
+}
+
+.ws-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+}
+
+.ws-btn-brand {
+  background: var(--ws-brand-gradient) !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 8px 22px rgba(139, 92, 246, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(139, 92, 246, 0.42); }
+}
+
+// Accessible focus ring
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 3px solid rgba(139, 92, 246, 0.55);
+  outline-offset: 2px;
+}
+
+// Login split-screen hero (desktop only)
+.ws-login-hero { display: none !important; }
+@media (min-width: 960px) {
+  .ws-login-hero { display: block !important; }
+  .ws-login-brand { display: none !important; }
+}
 
 // Chart container
 .ws-chart {
