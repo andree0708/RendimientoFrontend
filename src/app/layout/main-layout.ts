@@ -1,6 +1,8 @@
-import { Component, inject, signal, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component, inject, signal, OnInit, OnDestroy, ViewChild,
+} from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -13,6 +15,9 @@ import { WebSocketService } from '../core/websocket.service';
 import { NotificationService } from '../services/notification.service';
 import { WSEvent } from '../models';
 
+interface NavItem { link: string; label: string; icon: string; }
+interface NotifItem { id: string; title: string; message: string; }
+
 @Component({
   selector: 'app-main-layout',
   imports: [
@@ -22,13 +27,19 @@ import { WSEvent } from '../models';
   ],
   template: `
     <mat-sidenav-container style="height: 100vh; background: var(--ws-bg);">
-      <!-- Sidebar -->
-      <mat-sidenav [mode]="mobile() ? 'over' : 'side'" [opened]="!mobile()"
+
+      <!-- ── Sidebar ── -->
+      <mat-sidenav #sidenav
+        [mode]="mobile() ? 'over' : 'side'"
+        [opened]="!mobile()"
         style="width: 260px; background: var(--ws-surface); border-right: 1px solid var(--ws-border);">
-        <div style="padding: 20px 0; display: flex; flex-direction: column; height: 100%;">
+
+        <div style="display: flex; flex-direction: column; height: 100%; padding: 20px 0;">
+
           <!-- Logo -->
           <div style="padding: 0 20px 24px; display: flex; align-items: center; gap: 12px;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #ec4899, #f9a8d4);
+            <div style="width: 40px; height: 40px; border-radius: 12px;
+              background: linear-gradient(135deg, #ec4899, #f9a8d4);
               display: flex; align-items: center; justify-content: center;">
               <mat-icon style="color: white;">spa</mat-icon>
             </div>
@@ -40,18 +51,19 @@ import { WSEvent } from '../models';
 
           <!-- Nav links -->
           <mat-nav-list style="flex: 1;">
-            @for (item of navItems(); track item.link) {
+            @for (item of navItems; track item.link) {
               <mat-list-item
                 [routerLink]="item.link"
-                routerLinkActive
-                #rla="routerLinkActive"
+                routerLinkActive #rla="routerLinkActive"
                 [activated]="rla.isActive"
                 (click)="mobile() && sidenav.close()"
                 style="border-radius: 10px; margin: 2px 8px;">
-                <mat-icon matListItemIcon [style.color]="rla.isActive ? 'var(--ws-primary)' : 'var(--ws-text-muted)'">
+                <mat-icon matListItemIcon
+                  [style.color]="rla.isActive ? 'var(--ws-primary)' : 'var(--ws-text-muted)'">
                   {{ item.icon }}
                 </mat-icon>
-                <span matListItemTitle [style.font-weight]="rla.isActive ? '600' : '400'"
+                <span matListItemTitle
+                  [style.font-weight]="rla.isActive ? '600' : '400'"
                   [style.color]="rla.isActive ? 'var(--ws-primary)' : 'var(--ws-text)'">
                   {{ item.label }}
                 </span>
@@ -59,135 +71,163 @@ import { WSEvent } from '../models';
             }
           </mat-nav-list>
 
-          <!-- WS status -->
+          <!-- WS connection status -->
           <div style="padding: 12px 20px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem;">
             <span style="width: 8px; height: 8px; border-radius: 50%;"
-              [style.background]="ws.connected() ? '#22c55e' : '#d4b8b8'"></span>
+              [style.background]="ws.connected() ? '#22c55e' : '#d4b8b8'">
+            </span>
             <span style="color: var(--ws-text-muted);">
-              {{ ws.connected() ? 'Connected' : 'Connecting...' }}
+              {{ ws.connected() ? 'Live' : 'Connecting…' }}
             </span>
           </div>
         </div>
       </mat-sidenav>
 
-      <!-- Main content -->
+      <!-- ── Main content ── -->
       <mat-sidenav-content style="background: var(--ws-bg);">
+
         <!-- Top bar -->
         <mat-toolbar style="background: transparent; padding: 8px 24px; min-height: 64px;">
-          <button matIconButton (click)="sidenav.toggle()" [style.display]="mobile() ? 'inline-flex' : 'none'">
-            <mat-icon>menu</mat-icon>
-          </button>
+          @if (mobile()) {
+            <button mat-icon-button (click)="sidenav.toggle()">
+              <mat-icon>menu</mat-icon>
+            </button>
+          }
+
           <span style="flex: 1;"></span>
 
-          <!-- Notifications -->
-          <button matIconButton [matMenuTriggerFor]="notifMenu">
-            <mat-icon [matBadge]="notif.unreadCount()" [matBadgeHidden]="notif.unreadCount() === 0" matBadgeColor="warn" matBadgeSize="small">
-              notifications
-            </mat-icon>
+          <!-- Notifications bell -->
+          <button mat-icon-button [matMenuTriggerFor]="notifMenu">
+            <mat-icon
+              [matBadge]="notif.unreadCount() || null"
+              [matBadgeHidden]="notif.unreadCount() === 0"
+              matBadgeColor="warn"
+              matBadgeSize="small">notifications</mat-icon>
           </button>
           <mat-menu #notifMenu="matMenu">
             @for (n of recentNotifications(); track n.id) {
               <div style="padding: 12px 16px; max-width: 300px; border-bottom: 1px solid var(--ws-border);">
                 <div style="font-weight: 500; font-size: 0.85rem;">{{ n.title }}</div>
-                <div style="font-size: 0.78rem; color: var(--ws-text-muted); margin-top: 2px;">{{ n.message }}</div>
+                <div style="font-size: 0.78rem; color: var(--ws-text-muted); margin-top: 2px;">
+                  {{ n.message }}
+                </div>
               </div>
             }
             @if (recentNotifications().length === 0) {
-              <div style="padding: 16px; color: var(--ws-text-muted); font-size: 0.85rem;">No notifications</div>
+              <div style="padding: 16px; color: var(--ws-text-muted); font-size: 0.85rem;">
+                No notifications yet
+              </div>
             }
           </mat-menu>
 
-          <!-- User menu -->
-          <button matIconButton [matMenuTriggerFor]="userMenu">
-            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #f9a8d4);
-              display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85rem;">
+          <!-- User avatar menu -->
+          <button mat-icon-button [matMenuTriggerFor]="userMenu" style="margin-left: 4px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%;
+              background: linear-gradient(135deg, #ec4899, #f9a8d4);
+              display: flex; align-items: center; justify-content: center;
+              color: white; font-weight: 600; font-size: 0.85rem;">
               {{ userInitials() }}
             </div>
           </button>
           <mat-menu #userMenu="matMenu">
-            <div style="padding: 8px 16px;">
-              <div style="font-weight: 600;">{{ auth.currentUser()?.full_name }}</div>
-              <div style="font-size: 0.8rem; color: var(--ws-text-muted);">{{ auth.currentUser()?.email }}</div>
+            <div style="padding: 8px 16px; min-width: 180px;">
+              <div style="font-weight: 600; font-size: 0.9rem;">{{ auth.currentUser()?.full_name }}</div>
+              <div style="font-size: 0.78rem; color: var(--ws-text-muted);">{{ auth.currentUser()?.email }}</div>
             </div>
             <button mat-menu-item routerLink="/settings">
               <mat-icon>settings</mat-icon> Settings
             </button>
+            @if (auth.isAdmin()) {
+              <button mat-menu-item routerLink="/admin">
+                <mat-icon>admin_panel_settings</mat-icon> Admin
+              </button>
+            }
             <button mat-menu-item (click)="logout()">
               <mat-icon>logout</mat-icon> Sign out
             </button>
           </mat-menu>
         </mat-toolbar>
 
-        <!-- Routed content -->
+        <!-- Page content -->
         <div style="padding: 0 24px 24px; max-width: 1400px; margin: 0 auto;">
           <router-outlet />
         </div>
       </mat-sidenav-content>
     </mat-sidenav-container>
   `,
-  styles: [`
-    :host { display: block; height: 100vh; }
-    mat-list-item { height: 48px !important; }
-  `],
+  styles: [`:host { display: block; height: 100vh; }`],
 })
 export class MainLayout implements OnInit, OnDestroy {
-  private router = inject(Router);
-  private notifSvc = inject(NotificationService);
+  @ViewChild('sidenav') sidenavRef!: MatSidenav;
+
   auth = inject(AuthService);
   ws = inject(WebSocketService);
   notif = inject(NotificationService);
+  private router = inject(Router);
 
-  mobile = signal(false);
-  recentNotifications = signal<any[]>([]);
+  mobile = signal(window.innerWidth < 768);
+  recentNotifications = signal<NotifItem[]>([]);
 
-  // Import here to avoid circular dep in template
-  sidenav: any;
+  navItems: NavItem[] = [
+    { link: '/dashboard',       label: 'Dashboard',        icon: 'dashboard' },
+    { link: '/tasks',           label: 'Tasks',             icon: 'check_circle_outline' },
+    { link: '/self-reports',    label: 'Self-Reports',      icon: 'favorite_border' },
+    { link: '/analysis',        label: 'AI Analysis',       icon: 'psychology' },
+    { link: '/recommendations', label: 'Recommendations',   icon: 'lightbulb_outline' },
+    { link: '/sessions',        label: 'Sessions',          icon: 'history' },
+    { link: '/settings',        label: 'Settings',          icon: 'settings' },
+  ];
 
   ngOnInit() {
-    this.checkMobile();
-    window.addEventListener('resize', this.checkMobile);
+    window.addEventListener('resize', this.onResize);
     this.ws.connect();
 
-    // Listen for notifications over WebSocket
+    // Reload current user to get fresh data (e.g. is_superuser)
+    this.auth.loadCurrentUser().subscribe({
+      next: (u) => this.auth.setCurrentUser(u),
+      error: () => {},
+    });
+
+    // Listen for new notifications via WebSocket
     this.ws.on('notification.created', (event: WSEvent) => {
+      const p = event.payload as any;
       this.recentNotifications.update((list) => [
-        { id: event.event_id, title: (event.payload as any)['title'], message: (event.payload as any)['message'] },
+        { id: event.event_id, title: p['title'] ?? 'New notification', message: p['message'] ?? '' },
         ...list,
       ].slice(0, 10));
       this.notif.unreadCount.update((c) => c + 1);
     });
 
-    // Load initial notifications
-    this.notifSvc.listNotifications().subscribe((page) => {
-      this.recentNotifications.set(page.items.slice(0, 10));
-      this.notif.unreadCount.set(page.items.filter((n) => !n.is_read).length);
+    // Load unread count on startup
+    this.notif.listNotifications(1, 30).subscribe({
+      next: (page) => {
+        const unread = page.items.filter((n) => !n.is_read);
+        this.notif.unreadCount.set(unread.length);
+        this.recentNotifications.set(
+          page.items.slice(0, 10).map((n) => ({
+            id: n.id, title: n.title, message: n.message,
+          }))
+        );
+      },
+      error: () => {},
     });
   }
 
   ngOnDestroy() {
     this.ws.disconnect();
-    window.removeEventListener('resize', this.checkMobile);
+    window.removeEventListener('resize', this.onResize);
   }
 
-  private checkMobile = () => this.mobile.set(window.innerWidth < 768);
-
-  navItems = signal([
-    { link: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { link: '/tasks', label: 'Tasks', icon: 'check_circle_outline' },
-    { link: '/self-reports', label: 'Self-Reports', icon: 'favorite_border' },
-    { link: '/analysis', label: 'AI Analysis', icon: 'psychology' },
-    { link: '/recommendations', label: 'Recommendations', icon: 'lightbulb_outline' },
-    { link: '/sessions', label: 'Sessions', icon: 'history' },
-    { link: '/settings', label: 'Settings', icon: 'settings' },
-  ]);
-
-  adminItems = signal([
-    { link: '/admin', label: 'Admin Panel', icon: 'admin_panel_settings' },
-  ]);
+  private onResize = () => this.mobile.set(window.innerWidth < 768);
 
   userInitials(): string {
     const name = this.auth.currentUser()?.full_name ?? '';
-    return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+    return name
+      .split(' ')
+      .map((w) => w[0] ?? '')
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || '?';
   }
 
   logout(): void {
