@@ -1,0 +1,181 @@
+@use '@angular/material' as mat;
+
+// ============================================================
+// WorkSense AI — Global Theme
+// Warm, soft, approachable palette — not a cold "AI" aesthetic
+// ============================================================
+
+// ---- Custom palette: rose-lavender-amber warmth ----
+$worksense-primary: (
+  50:  #fdf2f8,
+  100: #fce7f3,
+  200: #fbcfe8,
+  300: #f9a8d4,
+  400: #f472b6,
+  500: #ec4899,
+  600: #db2777,
+  700: #be185d,
+  800: #9d174d,
+  900: #831843,
+  contrast: (
+    50:  #1a1a2e,
+    100: #1a1a2e,
+    200: #1a1a2e,
+    300: #1a1a2e,
+    400: #ffffff,
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  ),
+);
+
+$worksense-accent: (
+  50:  #f0fdfa,
+  100: #ccfbf1,
+  200: #99f6e4,
+  300: #5eead4,
+  400: #2dd4bf,
+  500: #14b8a6,
+  600: #0d9488,
+  700: #0f766e,
+  800: #115e59,
+  900: #134e4a,
+  contrast: (
+    50:  #1a1a2e, 100: #1a1a2e, 200: #1a1a2e, 300: #1a1a2e,
+    400: #ffffff, 500: #ffffff, 600: #ffffff, 700: #ffffff,
+    800: #ffffff, 900: #ffffff,
+  ),
+);
+
+$worksense-warn: (
+  50:  #fef3c7, 100: #fde68a, 200: #fcd34d, 300: #fbbf24,
+  400: #f59e0b, 500: #d97706, 600: #b45309, 700: #92400e,
+  800: #78350f, 900: #451a03,
+  contrast: (
+    50: #1a1a2e, 100: #1a1a2e, 200: #1a1a2e, 300: #1a1a2e,
+    400: #ffffff, 500: #ffffff, 600: #ffffff, 700: #ffffff,
+    800: #ffffff, 900: #ffffff,
+  ),
+);
+
+// ---- Light theme ----
+$worksense-theme: mat.m2-define-light-theme((
+  color: (
+    primary: mat.m2-define-palette($worksense-primary),
+    accent: mat.m2-define-palette($worksense-accent),
+    warn: mat.m2-define-palette($worksense-warn),
+  ),
+  typography: mat.m2-define-typography-config(
+    $font-family: "'Poppins', 'Segoe UI', Roboto, sans-serif",
+  ),
+  density: 0,
+));
+
+@include mat.all-component-themes($worksense-theme);
+
+// ---- CSS variables for custom components ----
+:root {
+  --ws-bg: #faf6f0;
+  --ws-surface: #ffffff;
+  --ws-surface-2: #fdf8f3;
+  --ws-text: #2d2d3a;
+  --ws-text-muted: #71717a;
+  --ws-border: #f0e6e0;
+  --ws-primary: #ec4899;
+  --ws-primary-light: #fdf2f8;
+  --ws-accent: #14b8a6;
+  --ws-accent-light: #f0fdfa;
+  --ws-radius: 16px;
+  --ws-radius-sm: 10px;
+  --ws-shadow: 0 2px 12px rgba(236, 72, 153, 0.06);
+  --ws-shadow-lg: 0 8px 30px rgba(236, 72, 153, 0.1);
+  --ws-gradient: linear-gradient(135deg, #fdf2f8 0%, #f0fdfa 100%);
+}
+
+// ---- Base ----
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: 'Poppins', 'Segoe UI', Roboto, sans-serif;
+  background: var(--ws-bg);
+  color: var(--ws-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+// Soft scrollbar
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #e8d8d8;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: #d4b8b8; }
+
+// ---- Utility classes ----
+.ws-card {
+  background: var(--ws-surface);
+  border-radius: var(--ws-radius);
+  box-shadow: var(--ws-shadow);
+  border: 1px solid var(--ws-border);
+  padding: 24px;
+  transition: box-shadow 0.2s ease;
+
+  &:hover { box-shadow: var(--ws-shadow-lg); }
+}
+
+.ws-page-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--ws-text);
+  margin-bottom: 4px;
+}
+
+.ws-page-subtitle {
+  color: var(--ws-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.ws-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &--low { background: #dcfce7; color: #15803d; }
+  &--moderate { background: #fef3c7; color: #a16207; }
+  &--high { background: #fee2e2; color: #b91c1c; }
+  &--info { background: var(--ws-primary-light); color: var(--ws-primary); }
+}
+
+.ws-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ws-text);
+}
+
+.ws-stat-label {
+  font-size: 0.8rem;
+  color: var(--ws-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// Fade-in animation
+@keyframes wsFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ws-fade-in { animation: wsFadeIn 0.3s ease forwards; }
+
+// Chart container
+.ws-chart {
+  width: 100%;
+  min-height: 300px;
+}
