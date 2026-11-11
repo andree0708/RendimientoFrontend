@@ -364,7 +364,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.clearActivity();
           this.sessionSvc.listSessions(1, 5).subscribe((page) => this.recentSessions.set(page.items));
         },
-        error: () => {
+        error: (err) => {
+          // 409 = already ended (e.g. stopped elsewhere): sync state instead of erroring.
+          if (err?.status === 409) {
+            this.activeSession.set(null);
+            this.activeSeconds.set(0);
+            this.clearActivity();
+            this.sessionSvc.getActiveSession().subscribe((s) => {
+              this.activeSession.set(s);
+              if (s) {
+                this.sessionStarted.set(new Date(s.started_at));
+                this.activeSeconds.set(s.total_active_seconds);
+                this.loadActivity(s.id);
+              }
+            });
+            this.snackBar.open('La sesión ya había terminado.', 'Cerrar', { duration: 2500 });
+            return;
+          }
           this.snackBar.open('No se pudo terminar la sesión. Inténtalo de nuevo.', 'Cerrar', { duration: 3000 });
         },
       });

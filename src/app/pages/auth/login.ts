@@ -219,6 +219,9 @@ export class LoginComponent {
     if (err?.status === 0) {
       return 'No se puede contactar el servidor. Arranca primero el backend (uvicorn app.main:app --reload en el puerto 8000) e inténtalo de nuevo.';
     }
+    if (err?.status === 429) {
+      return 'Demasiados intentos. Espera un minuto antes de probar de nuevo.';
+    }
     if (typeof err.error?.detail === 'string' && err.error.detail) {
       return err.error.detail;
     }
