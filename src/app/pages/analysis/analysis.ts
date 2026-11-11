@@ -8,6 +8,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { AiService } from '../../services/ai.service';
 import { EchartsDirective } from '../../shared/echarts.directive';
+import { riskEs as translateRisk } from '../../shared/risk-labels';
 import { FatigueAssessment, LLMAnalysis, PerformancePrediction } from '../../models';
 
 @Component({
@@ -370,16 +371,9 @@ export class AnalysisComponent implements OnInit {
     }
   }
 
-  /** Los valores del backend se quedan en inglés; se muestran traducidos. */
+  /** Los valores del backend se quedan en inglés; helper compartido los traduce. */
   riskEs(risk: string): string {
-    const r = risk.toLowerCase().replace(/_/g, ' ');
-    const map: Record<string, string> = {
-      low: 'Bajo',
-      moderate: 'Moderado',
-      high: 'Alto',
-      unknown: 'Desconocido',
-    };
-    return map[r] ?? risk;
+    return translateRisk(risk);
   }
 
   riskColor(risk: string): string {

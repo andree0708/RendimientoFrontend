@@ -14,6 +14,7 @@ import { RecommendationService } from '../../services/recommendation.service';
 import { WebSocketService } from '../../core/websocket.service';
 import { WorkSession, Recommendation, WSEvent } from '../../models';
 import { EchartsDirective } from '../../shared/echarts.directive';
+import { riskEs as translateRisk } from '../../shared/risk-labels';
 
 @Component({
   selector: 'app-dashboard',
@@ -63,6 +64,11 @@ import { EchartsDirective } from '../../shared/echarts.directive';
           </span>
           <div class="ws-stat-label" style="margin-top: 10px;">Tiempo activo</div>
           <div class="ws-stat-value">{{ formatTime(activeSeconds()) }}</div>
+          @if (activeSession() && !hasMetrics()) {
+            <div style="font-size: 0.75rem; color: var(--ws-text-muted); margin-top: 6px;">
+              Sin métricas todavía: conecta el agente o espera la primera ingesta.
+            </div>
+          }
         </div>
         <div class="ws-card ws-kpi" style="text-align: center; --ws-kpi-glow: rgba(139, 92, 246, 0.12);">
           <span class="ws-kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
@@ -133,7 +139,7 @@ import { EchartsDirective } from '../../shared/echarts.directive';
           <div style="display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--ws-border);">
             <mat-chip [style.background]="rec.priority === 'high' ? '#fee2e2' : 'var(--ws-primary-light)'"
               [style.color]="rec.priority === 'high' ? '#b91c1c' : 'var(--ws-primary)'">
-              {{ rec.category }}
+              {{ recCategoryEs(rec.category) }}
             </mat-chip>
             <div style="flex: 1;">
               <div style="font-weight: 500;">{{ rec.title }}</div>
@@ -427,21 +433,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `${m} min`;
   }
 
-  /** Backend values stay in English; display them translated. */
+  /** Backend values stay in English; shared helper renders them in Spanish. */
   riskLabelEs(): string {
-    const map: Record<string, string> = {
-      low: 'Bajo', moderate: 'Moderado', high: 'Alto', unknown: 'Desconocido',
-    };
-    return map[this.fatigueRisk()] ?? this.fatigueRisk();
+    return translateRisk(this.fatigueRisk());
   }
 
   performanceLabelEs(): string {
-    const v = this.performanceLabel().replace(/_/g, ' ');
-    const map: Record<string, string> = {
-      unknown: 'Desconocido', improving: 'Mejorando', declining: 'Empeorando',
-      stable: 'Estable',
-    };
-    return map[v] ?? v;
+    return translateRisk(this.performanceLabel());
   }
 
   sessionStatusEs(status: string): string {
@@ -449,6 +447,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       active: 'Activa', completed: 'Completada',
     };
     return map[status] ?? status;
+  }
+
+  recCategoryEs(category: string): string {
+    const map: Record<string, string> = {
+      break: 'Pausa', task_management: 'Tareas', schedule: 'Horario',
+      workload: 'Carga de trabajo', general: 'General',
+    };
+    return map[category] ?? category.replace(/_/g, ' ');
   }
 
   riskColor(risk: string): string {
