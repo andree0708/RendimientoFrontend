@@ -8,7 +8,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { AiService } from '../../services/ai.service';
 import { EchartsDirective } from '../../shared/echarts.directive';
-import { FatigueAssessment, PerformancePrediction } from '../../models';
+import { FatigueAssessment, LLMAnalysis, PerformancePrediction } from '../../models';
 
 @Component({
   selector: 'app-analysis',
@@ -20,11 +20,15 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
 
       <!-- Action buttons -->
       <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
-        <button mat-flat-button color="primary" (click)="runFatigue()" [disabled]="loading()" style="border-radius: 12px;">
-          <mat-icon>psychology</mat-icon> Evaluar fatiga
+        <button mat-flat-button color="primary" (click)="runLLMAnalysis()" [disabled]="loading()"
+          style="border-radius: 12px;" class="ws-btn-brand">
+          <mat-icon>auto_awesome</mat-icon> Analizar con IA
         </button>
-        <button mat-flat-button (click)="runPerformance()" [disabled]="loading()" style="border-radius: 12px;">
-          <mat-icon>trending_up</mat-icon> Predecir rendimiento
+        <button mat-stroked-button (click)="runFatigue()" [disabled]="loading()" style="border-radius: 12px;">
+          <mat-icon>psychology</mat-icon> Evaluar fatiga (modelo)
+        </button>
+        <button mat-stroked-button (click)="runPerformance()" [disabled]="loading()" style="border-radius: 12px;">
+          <mat-icon>trending_up</mat-icon> Predecir rendimiento (modelo)
         </button>
         <button mat-stroked-button (click)="runAnomalies()" [disabled]="loading()" style="border-radius: 12px;">
           <mat-icon>detector</mat-icon> Detectar anomalías
@@ -33,6 +37,62 @@ import { FatigueAssessment, PerformancePrediction } from '../../models';
 
       @if (loading()) {
         <mat-progress-bar mode="indeterminate" style="margin-bottom: 16px; border-radius: 4px;" />
+      }
+
+      <!-- LLM result -->
+      @if (llmResult()) {
+        <div class="ws-card" style="margin-bottom: 24px; border-left: 4px solid var(--ws-violet);">
+          <div style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <mat-icon style="color: var(--ws-violet);">auto_awesome</mat-icon>
+            Análisis generado por IA
+            <mat-chip style="background: #ede9fe; color: #6d28d9; font-size: 0.75rem;">
+              {{ llmResult()!.generated_by === 'groq' ? ('Groq · ' + llmModelShort()) : 'No disponible' }}
+            </mat-chip>
+            @if (llmResult()!.success) {
+              <mat-chip [style.background]="llmResult()!.data_basis === 'real' ? '#dcfce7' : '#fef3c7'"
+                [style.color]="llmResult()!.data_basis === 'real' ? '#15803d' : '#92400e'"
+                style="font-size: 0.75rem;">
+                {{ llmResult()!.data_basis === 'real' ? 'Datos reales' : llmResult()!.data_basis === 'demo' ? 'Datos de demostración' : 'Datos mixtos' }}
+              </mat-chip>
+            }
+          </div>
+          @if (llmResult()!.success) {
+            @if (llmResult()!.fatigue; as f) {
+              <div style="margin-bottom: 10px;">
+                <strong>Fatiga: {{ riskEs(f.risk_category) }}</strong>
+                <span style="color: var(--ws-text-muted);"> ({{ (f.risk_probability * 100) | number:'1.0-0' }}% · confianza {{ (f.confidence * 100) | number:'1.0-0' }}%)</span>
+              </div>
+              <p style="color: var(--ws-text); margin: 0 0 8px; line-height: 1.5;">{{ f.summary }}</p>
+              @if (f.factors.length > 0) {
+                <div style="font-size: 0.82rem; color: var(--ws-text-muted); margin-bottom: 10px;">
+                  Factores: {{ factorNames(f) }}
+                </div>
+              }
+            }
+            @if (llmResult()!.performance; as p) {
+              <div style="margin-bottom: 10px;">
+                <strong>Rendimiento: {{ perfTrendEs(p.trend) }}</strong>
+                <span style="color: var(--ws-text-muted);"> (variación {{ p.variation | number:'1.2-2' }})</span>
+              </div>
+              <p style="color: var(--ws-text); margin: 0 0 8px; line-height: 1.5;">{{ p.summary }}</p>
+            }
+            @if (llmResult()!.anomalies.length > 0) {
+              <div style="font-weight: 600; font-size: 0.85rem; margin: 8px 0 4px;">Observaciones</div>
+              @for (a of llmResult()!.anomalies; track a.description) {
+                <div style="font-size: 0.85rem; color: var(--ws-text); margin-bottom: 4px;">
+                  &middot; {{ a.description }}
+                </div>
+              }
+            }
+            @if (llmResult()!.recommendations_created > 0) {
+              <div style="font-size: 0.82rem; color: var(--ws-text-muted); margin-top: 8px;">
+                Se {{ llmResult()!.recommendations_created === 1 ? 'creó 1 recomendación' : 'crearon ' + llmResult()!.recommendations_created + ' recomendaciones' }} en la pestaña Recomendaciones.
+              </div>
+            }
+          } @else {
+            <p style="color: var(--ws-text-muted); margin: 0;">{{ llmResult()!.message }}</p>
+          }
+        </div>
       }
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;" [style.grid-template-columns]="mobile() ? '1fr' : '1fr 1fr'">
@@ -165,6 +225,7 @@ export class AnalysisComponent implements OnInit {
   anomalyResult = signal<{ anomaly_count: number; is_anomalous: boolean; anomaly_score: number } | null>(null);
   fatigueHistory = signal<FatigueAssessment[]>([]);
   unreliable = signal(false);
+  llmResult = signal<LLMAnalysis | null>(null);
   mobile = signal(window.innerWidth < 768);
 
   ngOnInit() {
@@ -237,12 +298,57 @@ export class AnalysisComponent implements OnInit {
     });
   }
 
+  runLLMAnalysis() {
+    this.loading.set(true);
+    this.aiSvc.analyzeWithLLM().subscribe({
+      next: (result) => {
+        this.llmResult.set(result);
+        this.loading.set(false);
+        if (result.success) {
+          this.loadHistory();
+          this.snackBar.open(result.message || 'Análisis completado', 'Cerrar', { duration: 3000 });
+        } else {
+          this.snackBar.open(result.message || 'Análisis no disponible', 'Cerrar', { duration: 4000 });
+        }
+      },
+      error: () => {
+        this.loading.set(false);
+        this.llmResult.set(null);
+        this.snackBar.open('No se pudo contactar el servicio de análisis', 'Cerrar', { duration: 3000 });
+      },
+    });
+  }
+
+  llmModelShort(): string {
+    const m = this.llmResult()?.model ?? '';
+    const known: Record<string, string> = {
+      'openai/gpt-oss-20b': 'GPT-OSS 20B',
+      'openai/gpt-oss-120b': 'GPT-OSS 120B',
+      'llama-3.3-70b-versatile': 'Llama 3.3 70B',
+      'qwen/qwen3.8-27b': 'Qwen3 27B',
+    };
+    if (known[m]) return known[m];
+    return m.replace('llama-', 'Llama ').replace(/[-_]/g, ' ');
+  }
+
+  factorNames(f: { factors: { name: string }[] }): string {
+    return f.factors.map((x) => x.name).join(', ');
+  }
+
+  perfTrendEs(trend: string): string {
+    const map: Record<string, string> = {
+      improving: 'Mejorando', stable: 'Estable', declining: 'Empeorando',
+    };
+    return map[trend] ?? trend;
+  }
+
   private parseFatigueFeatures() {
     const f = this.latestFatigue()?.top_features;
     if (f) {
       try {
         const parsed = JSON.parse(f);
-        this.topFatigueFeatures.set(Object.entries(parsed).slice(0, 5).map(([name, val]) => ({
+        // Skip internal meta keys (e.g. _source, _model from the LLM layer).
+        this.topFatigueFeatures.set(Object.entries(parsed).filter(([name]) => !name.startsWith('_')).slice(0, 5).map(([name, val]) => ({
           name: name.replace(/_/g, ' '),
           importance: Math.abs(val as number),
         })));
@@ -255,7 +361,8 @@ export class AnalysisComponent implements OnInit {
     if (f) {
       try {
         const parsed = JSON.parse(f);
-        this.topPerfFeatures.set(Object.entries(parsed).slice(0, 5).map(([name, val]) => ({
+        // Skip internal meta keys (e.g. _source, _model from the LLM layer).
+        this.topPerfFeatures.set(Object.entries(parsed).filter(([name]) => !name.startsWith('_')).slice(0, 5).map(([name, val]) => ({
           name: name.replace(/_/g, ' '),
           importance: Math.abs(val as number),
         })));

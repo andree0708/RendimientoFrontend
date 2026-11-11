@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { ApiService } from './api.service';
-import { FatigueAssessment, PerformancePrediction, ModelVersion, Page } from '../models';
+import { FatigueAssessment, LLMAnalysis, PerformancePrediction, ModelVersion, Page } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AiService {
@@ -55,5 +55,9 @@ export class AiService {
       is_anomalous: boolean;
       anomaly_score: number;
     }>('/ai/anomalies');
+  }
+
+  analyzeWithLLM() {
+    return this.api.post<LLMAnalysis>('/ai/analyze', {});
   }
 }

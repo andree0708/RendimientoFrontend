@@ -123,6 +123,46 @@ export interface PerformancePrediction {
   created_at: string;
 }
 
+export interface LLMFactor {
+  name: string;
+  weight: number;
+}
+
+export interface LLMFatigue {
+  risk_category: string;
+  risk_probability: number;
+  confidence: number;
+  summary: string;
+  factors: LLMFactor[];
+}
+
+export interface LLMPerformance {
+  trend: string;
+  risk_label: string;
+  variation: number;
+  confidence: number;
+  summary: string;
+}
+
+export interface LLMAnomaly {
+  description: string;
+  severity: string;
+}
+
+export interface LLMAnalysis {
+  success: boolean;
+  message: string;
+  data_basis: string;
+  generated_by: string | null;
+  model: string | null;
+  assessment_id: string | null;
+  prediction_id: string | null;
+  fatigue: LLMFatigue | null;
+  performance: LLMPerformance | null;
+  anomalies: LLMAnomaly[];
+  recommendations_created: number;
+}
+
 export interface Recommendation {
   id: string;
   user_id: string;
