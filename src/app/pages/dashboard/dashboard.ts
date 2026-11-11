@@ -12,7 +12,7 @@ import { AiService } from '../../services/ai.service';
 import { MetricsService } from '../../services/metrics.service';
 import { RecommendationService } from '../../services/recommendation.service';
 import { WebSocketService } from '../../core/websocket.service';
-import { WorkSession, Recommendation, WSEvent } from '../../models';
+import { WorkSession, Recommendation, WSEvent, ActivityMetric } from '../../models';
 import { EchartsDirective } from '../../shared/echarts.directive';
 import { riskEs as translateRisk } from '../../shared/risk-labels';
 
@@ -114,7 +114,19 @@ import { riskEs as translateRisk } from '../../shared/risk-labels';
           }
         </div>
         <div class="ws-card">
-          <div style="font-weight: 600; margin-bottom: 16px;">Actividad en el tiempo</div>
+          <div style="font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+            Actividad en el tiempo
+            @if (showingRecentActivity()) {
+              <mat-chip style="background: var(--ws-primary-light); color: var(--ws-primary); font-size: 0.72rem;">
+                Última actividad registrada
+              </mat-chip>
+            }
+          </div>
+          @if (showingRecentActivity()) {
+            <div style="font-size: 0.8rem; color: var(--ws-text-muted); margin-bottom: 12px;">
+              Esta sesión aún no tiene métricas; se muestra tu actividad más reciente.
+            </div>
+          }
           @if (activityHistory().length > 0) {
             <div class="ws-chart" [appEcharts]="activityChartOptions()"></div>
           } @else {
@@ -193,6 +205,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   activeSeconds = signal(0);
   continuousWork = signal(0);
   hasMetrics = signal(false);
+  /** True when the chart shows recent cross-session activity (labeled fallback). */
+  showingRecentActivity = signal(false);
   fatigueRisk = signal('unknown');
   fatigueProbability = signal(0);
   performanceLabel = signal('unknown');
@@ -288,26 +302,52 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadActivity(sessionId: string) {
     this.metricsSvc.listSessionMetrics(sessionId, 1, 100).subscribe({
       next: (page) => {
-        const metrics = [...page.items].sort(
-          (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime(),
-        );
-        this.activityHistory.set(metrics.map((m) => ({
-          time: new Date(m.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          active: Math.round(m.active_seconds / 60),
-          idle: Math.round(m.idle_seconds / 60),
-        })));
-        const latest = metrics[metrics.length - 1];
-        this.hasMetrics.set(metrics.length > 0);
-        this.continuousWork.set(latest?.continuous_work_seconds ?? 0);
+        if (page.items.length > 0) {
+          this.setActivityFromMetrics(page.items);
+          this.showingRecentActivity.set(false);
+          return;
+        }
+        // Active session has no metrics yet: fall back to the user's most
+        // recent activity (explicitly labeled) instead of an empty chart.
+        // KPIs stay session-scoped: hasMetrics/continuousWork are untouched.
+        this.metricsSvc.listRecentMetrics(1, 100).subscribe({
+          next: (recent) => {
+            const metrics = [...recent.items].sort(
+              (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime(),
+            );
+            this.activityHistory.set(metrics.slice(-100).map((m) => ({
+              time: new Date(m.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              active: Math.round(m.active_seconds / 60),
+              idle: Math.round(m.idle_seconds / 60),
+            })));
+            this.showingRecentActivity.set(metrics.length > 0);
+          },
+          error: () => this.clearActivity(),
+        });
       },
       error: () => this.clearActivity(),
     });
+  }
+
+  private setActivityFromMetrics(metrics: ActivityMetric[]) {
+    const sorted = [...metrics].sort(
+      (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime(),
+    );
+    this.activityHistory.set(sorted.map((m) => ({
+      time: new Date(m.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      active: Math.round(m.active_seconds / 60),
+      idle: Math.round(m.idle_seconds / 60),
+    })));
+    const latest = sorted[sorted.length - 1];
+    this.hasMetrics.set(sorted.length > 0);
+    this.continuousWork.set(latest?.continuous_work_seconds ?? 0);
   }
 
   private clearActivity() {
     this.activityHistory.set([]);
     this.hasMetrics.set(false);
     this.continuousWork.set(0);
+    this.showingRecentActivity.set(false);
   }
 
   private handleWSEvent(event: WSEvent): void {

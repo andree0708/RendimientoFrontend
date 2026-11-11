@@ -12,4 +12,11 @@ export class MetricsService {
       page_size: pageSize,
     });
   }
+
+  listRecentMetrics(page = 1, pageSize = 100) {
+    return this.api.get<Page<ActivityMetric>>('/metrics/recent', {
+      page,
+      page_size: pageSize,
+    });
+  }
 }
