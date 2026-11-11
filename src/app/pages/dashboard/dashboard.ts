@@ -414,13 +414,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   sessionDuration(): string {
     if (!this.activeSession()) return '';
     const diff = Date.now() - this.sessionStarted().getTime();
-    return this.formatTime(Math.floor(diff / 1000));
+    // Clamp: clock skew or a future-dated start must never show negatives.
+    return this.formatTime(Math.max(0, Math.floor(diff / 1000)));
   }
 
   formatTime(seconds: number): string {
-    if (!seconds) return '0 min';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
+    const total = Math.max(0, Math.floor(seconds || 0));
+    if (!total) return '0 min';
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
     if (h > 0) return `${h} h ${m} min`;
     return `${m} min`;
   }
