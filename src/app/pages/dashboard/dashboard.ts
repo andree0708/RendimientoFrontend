@@ -75,7 +75,12 @@ import { riskEs as translateRisk } from '../../shared/risk-labels';
             <mat-icon>bolt</mat-icon>
           </span>
           <div class="ws-stat-label" style="margin-top: 10px;">Trabajo continuo</div>
-          <div class="ws-stat-value">{{ hasMetrics() ? formatTime(continuousWork()) : '—' }}</div>
+          <div class="ws-stat-value">{{ hasMetrics() || showingRecentActivity() ? formatTime(continuousWork()) : '—' }}</div>
+          @if (!hasMetrics() && showingRecentActivity()) {
+            <div style="font-size: 0.75rem; color: var(--ws-text-muted); margin-top: 6px;">
+              Mejor racha del último registro
+            </div>
+          }
         </div>
         <div class="ws-card ws-kpi" style="text-align: center; --ws-kpi-glow: rgba(236, 72, 153, 0.12);">
           <span class="ws-kpi-icon" style="background: linear-gradient(135deg, #ec4899, #be185d);">
@@ -320,6 +325,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
               active: Math.round(m.active_seconds / 60),
               idle: Math.round(m.idle_seconds / 60),
             })));
+            this.continuousWork.set(metrics.reduce(
+              (peak, m) => Math.max(peak, m.continuous_work_seconds || 0), 0,
+            ));
             this.showingRecentActivity.set(metrics.length > 0);
           },
           error: () => this.clearActivity(),
